@@ -1,5 +1,5 @@
-import type { AssetProvider } from "./assets.js";
-import { classify, resolveFaceTextures } from "./assets.js";
+import type { AssetProvider, FaceLayer, TintClass } from "./assets.js";
+import { classify, DEFAULT_TINT, resolveFaceLayers } from "./assets.js";
 import { affineForParallelogram, DEFAULT_ISO, projectCube } from "./iso.js";
 import type { IsoConfig } from "./types.js";
 import { getWindowLayout, findSlotRect } from "./layout.js";
@@ -71,9 +71,14 @@ export interface RenderOptions {
   fallbackBackground?: string;
   /** Offscreen canvas factory for face shading. Optional but recommended. */
   offscreen?: OffscreenFactory;
+  /**
+   * Biome tint colors for grayscale textures (grass, leaves, …). Merged over
+   * the defaults; pass any subset. Tinting requires an `offscreen` factory.
+   */
+  tint?: Partial<Record<TintClass, string>>;
 }
 
-const RESOLVED: Required<Omit<RenderOptions, "iso" | "offscreen">> & {
+const RESOLVED: Required<Omit<RenderOptions, "iso" | "offscreen" | "tint">> & {
   iso: IsoConfig;
 } = {
   scale: 4,
@@ -148,6 +153,7 @@ export async function renderInventory(
 interface DrawOpt {
   iso: IsoConfig;
   offscreen?: OffscreenFactory;
+  tint?: Partial<Record<TintClass, string>>;
 }
 
 async function drawSlot(
@@ -214,13 +220,16 @@ async function drawIsoBlock(
   iconPx: number
 ): Promise<void> {
   const model = provider.getBlockModel(name);
-  const faces = resolveFaceTextures(model?.textures);
-  if (!faces) return;
+  const layers = resolveFaceLayers(model?.textures);
+  if (!layers) return;
 
+  const tint = { ...DEFAULT_TINT, ...opt.tint };
+
+  // Composite each visible face (base texture + any tinted overlay, shaded).
   const [topImg, leftImg, rightImg] = await Promise.all([
-    loadFace(provider, loader, faces.top),
-    loadFace(provider, loader, faces.left),
-    loadFace(provider, loader, faces.right),
+    composeFace(layers.top, provider, loader, tint, opt.offscreen),
+    composeFace(layers.left, provider, loader, tint, opt.offscreen),
+    composeFace(layers.right, provider, loader, tint, opt.offscreen),
   ]);
 
   const geom = projectCube(opt.iso);
@@ -256,6 +265,70 @@ async function drawIsoBlock(
     // Map the square face texture onto the parallelogram (a=origin, b=u, d=v).
     drawTexturedQuad(ctx, shaded, a, b, d, img.width, img.height);
   }
+}
+
+/**
+ * Load a face's texture layers, tint any tinted (grayscale) layers by their
+ * class color, and composite them (base first) into a single image. Returns
+ * undefined if no layer texture resolves. Without an offscreen factory, tinting
+ * and multi-layer compositing are skipped and the base texture is returned.
+ */
+async function composeFace(
+  layers: FaceLayer[],
+  provider: AssetProvider,
+  loader: ImageLoader,
+  tint: Record<TintClass, string>,
+  offscreen?: OffscreenFactory
+): Promise<LoadedImage | undefined> {
+  const loaded: { img: LoadedImage; color?: string }[] = [];
+  for (const layer of layers) {
+    const img = await loadFace(provider, loader, layer.key);
+    if (img) loaded.push({ img, color: layer.tint ? tint[layer.tint] : undefined });
+  }
+  if (loaded.length === 0) return undefined;
+
+  // No offscreen: can't tint or composite; fall back to the base texture.
+  if (!offscreen) return loaded[0]!.img;
+
+  // Tint each layer in its own buffer, then stack onto a face buffer.
+  const tinted = loaded.map(({ img, color }) =>
+    color ? multiplyColor(img, color, offscreen) : img
+  );
+  if (tinted.length === 1) return tinted[0]!;
+
+  const w = tinted[0]!.width;
+  const h = tinted[0]!.height;
+  const buf = offscreen(w, h);
+  if (!buf) return tinted[0]!;
+  buf.ctx.imageSmoothingEnabled = false;
+  buf.ctx.clearRect(0, 0, w, h);
+  for (const t of tinted) buf.ctx.drawImage(t.source, 0, 0);
+  return { width: w, height: h, source: buf.canvas };
+}
+
+/**
+ * Multiply an image's RGB by a solid color while preserving its alpha — the
+ * grayscale-texture biome-tint operation. Returns the original if no offscreen.
+ */
+function multiplyColor(
+  img: LoadedImage,
+  color: string,
+  offscreen: OffscreenFactory
+): LoadedImage {
+  const buf = offscreen(img.width, img.height);
+  if (!buf) return img;
+  const { ctx, canvas } = buf;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, img.width, img.height);
+  ctx.drawImage(img.source, 0, 0);
+  ctx.globalCompositeOperation = "multiply";
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, img.width, img.height);
+  // Restore the original alpha (multiply over the gray rect made it opaque).
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.drawImage(img.source, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
+  return { width: img.width, height: img.height, source: canvas };
 }
 
 async function loadFace(

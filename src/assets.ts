@@ -84,6 +84,91 @@ export function resolveFaceTextures(
 }
 
 /**
+ * Tint classes for grayscale textures that Minecraft colors at render time via
+ * a biome colormap (`tintindex`). Inventory icons have no biome, so each class
+ * maps to a single default color (see DEFAULT_TINT), overridable per render.
+ */
+export type TintClass = "grass" | "foliage" | "spruce" | "birch" | "lilypad";
+
+/**
+ * Default tint colors per class. These approximate Minecraft's *default*
+ * (biome-less) colormap corner used for inventory icons. Override any of them
+ * via the render `tint` option.
+ */
+export const DEFAULT_TINT: Record<TintClass, string> = {
+  grass: "#7cbd6b",
+  foliage: "#59ae30",
+  spruce: "#619961",
+  birch: "#80a755",
+  lilypad: "#208030",
+};
+
+/** One texture layer of a face: a texture key plus an optional biome tint. */
+export interface FaceLayer {
+  key: string;
+  tint?: TintClass;
+}
+
+/** Per-face layer stacks (base texture first, tinted overlay last). */
+export interface BlockFaceLayers {
+  top: FaceLayer[];
+  left: FaceLayer[];
+  right: FaceLayer[];
+}
+
+// Texture keys that are shipped grayscale and biome-tinted in vanilla. Spruce
+// and birch leaves use constant (non-biome) colors, so they get their own class.
+const GRASS_TEX =
+  /^(grass_block_top|grass_block_side_overlay|grass|short_grass|fern|tall_grass.*|large_fern.*|potted_fern|sugar_cane)$/;
+const FOLIAGE_TEX =
+  /^(oak_leaves|jungle_leaves|acacia_leaves|dark_oak_leaves|mangrove_leaves|azalea_leaves_?.*|vine|mangrove_roots.*)$/;
+
+/** Map a texture key to its tint class, or undefined if it is not tinted. */
+export function tintClassFor(faceKey: string): TintClass | undefined {
+  if (GRASS_TEX.test(faceKey)) return "grass";
+  if (faceKey === "spruce_leaves") return "spruce";
+  if (faceKey === "birch_leaves") return "birch";
+  if (faceKey === "lily_pad") return "lilypad";
+  if (FOLIAGE_TEX.test(faceKey)) return "foliage";
+  return undefined;
+}
+
+/**
+ * Like {@link resolveFaceTextures}, but returns layered faces: each visible
+ * face is a stack of texture layers (base first), each carrying an optional
+ * tint class. Grass-style blocks contribute a tinted `overlay` layer on their
+ * side faces; tinted textures (grass top, leaves, …) carry their tint class so
+ * the renderer can colorize the grayscale source.
+ */
+export function resolveFaceLayers(
+  textures: Record<string, string> | undefined
+): BlockFaceLayers | undefined {
+  const base = resolveFaceTextures(textures);
+  if (!base || !textures) return undefined;
+
+  // Resolve the (optional) side overlay, dereferencing "#var" indirection.
+  let overlayRef: string | undefined = textures.overlay;
+  let guard = 0;
+  while (overlayRef && overlayRef.startsWith("#") && guard++ < 8) {
+    overlayRef = textures[overlayRef.slice(1)];
+  }
+  const overlayKey = overlayRef ? textureRefToFaceKey(overlayRef) : undefined;
+
+  const layer = (key: string): FaceLayer => {
+    const tint = tintClassFor(key);
+    return tint ? { key, tint } : { key };
+  };
+  const side = (baseKey: string): FaceLayer[] =>
+    overlayKey ? [layer(baseKey), layer(overlayKey)] : [layer(baseKey)];
+
+  return {
+    top: [layer(base.top)],
+    left: side(base.left),
+    right: side(base.right),
+  };
+}
+
+/**
  * Classify a name as a block (has a usable block model), an item (has a flat
  * sprite) or missing. Blocks are preferred when a model with resolvable faces
  * exists, matching how Minecraft renders inventory icons.
