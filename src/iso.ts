@@ -109,24 +109,25 @@ export function projectCube(config: IsoConfig = DEFAULT_ISO): CubeGeometry {
     bsw: corner(-1, -1, +1),
   };
 
-  // With rotation [30, 225], the viewer sees the top and two front faces.
-  // The two visible vertical faces are the south (+z) and east (+x) faces.
+  // With rotation [30, 225] the viewer sees the top plus the two vertical faces
+  // that share the near vertical edge (tne–bne): the east (+x) and north (-z)
+  // faces. (The south/west faces point away from the camera and are culled.)
   const top: FacePolygon = {
     face: "top",
     shade: config.topShade,
     quad: [v.tnw, v.tne, v.tse, v.tsw],
   };
-  // Left visible side: south face (z = +1): tsw, tse, bse, bsw
+  // Left visible side: east face (x = +1): tse, tne, bne, bse
   const left: FacePolygon = {
     face: "left",
     shade: config.leftShade,
-    quad: [v.tsw, v.tse, v.bse, v.bsw],
+    quad: [v.tse, v.tne, v.bne, v.bse],
   };
-  // Right visible side: east face (x = +1): tse, tne, bne, bse
+  // Right visible side: north face (z = -1): tne, tnw, bnw, bne
   const right: FacePolygon = {
     face: "right",
     shade: config.rightShade,
-    quad: [v.tse, v.tne, v.bne, v.bse],
+    quad: [v.tne, v.tnw, v.bnw, v.bne],
   };
 
   const faces = [top, left, right];
