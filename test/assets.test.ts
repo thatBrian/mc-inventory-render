@@ -3,10 +3,69 @@ import {
   normalizeName,
   textureRefToFaceKey,
   resolveFaceTextures,
+  resolveFaceLayers,
+  tintClassFor,
   classify,
   type AssetProvider,
   type BlockModel,
 } from "../src/assets.js";
+
+describe("tintClassFor", () => {
+  it("classifies grass-family textures as grass", () => {
+    expect(tintClassFor("grass_block_top")).toBe("grass");
+    expect(tintClassFor("grass_block_side_overlay")).toBe("grass");
+    expect(tintClassFor("short_grass")).toBe("grass");
+    expect(tintClassFor("fern")).toBe("grass");
+  });
+  it("classifies biome-tinted leaves as foliage, constant-color leaves on their own", () => {
+    expect(tintClassFor("oak_leaves")).toBe("foliage");
+    expect(tintClassFor("jungle_leaves")).toBe("foliage");
+    expect(tintClassFor("vine")).toBe("foliage");
+    expect(tintClassFor("spruce_leaves")).toBe("spruce");
+    expect(tintClassFor("birch_leaves")).toBe("birch");
+    expect(tintClassFor("lily_pad")).toBe("lilypad");
+  });
+  it("returns undefined for untinted textures", () => {
+    expect(tintClassFor("stone")).toBeUndefined();
+    expect(tintClassFor("oak_log")).toBeUndefined();
+    expect(tintClassFor("grass_block_side")).toBeUndefined(); // dirt base, not tinted
+  });
+});
+
+describe("resolveFaceLayers", () => {
+  it("returns single untinted layers for a uniform block", () => {
+    const f = resolveFaceLayers({ all: "minecraft:block/stone" });
+    expect(f).toEqual({
+      top: [{ key: "stone" }],
+      left: [{ key: "stone" }],
+      right: [{ key: "stone" }],
+    });
+  });
+
+  it("tints the grass top and adds a tinted side overlay", () => {
+    const f = resolveFaceLayers({
+      top: "block/grass_block_top",
+      side: "block/grass_block_side",
+      overlay: "block/grass_block_side_overlay",
+    });
+    expect(f).toEqual({
+      top: [{ key: "grass_block_top", tint: "grass" }],
+      left: [
+        { key: "grass_block_side" },
+        { key: "grass_block_side_overlay", tint: "grass" },
+      ],
+      right: [
+        { key: "grass_block_side" },
+        { key: "grass_block_side_overlay", tint: "grass" },
+      ],
+    });
+  });
+
+  it("returns undefined for empty/missing textures", () => {
+    expect(resolveFaceLayers(undefined)).toBeUndefined();
+    expect(resolveFaceLayers({})).toBeUndefined();
+  });
+});
 
 describe("normalizeName", () => {
   it("strips minecraft namespace", () => {

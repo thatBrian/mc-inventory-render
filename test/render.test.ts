@@ -141,6 +141,58 @@ describe("renderInventory (node-canvas)", () => {
     expect(top).toBeGreaterThan(side);
   });
 
+  it("biome-tints the grass top green (not gray)", async () => {
+    const { provider, guiUrl } = setup("1.21.1");
+    const canvas = createCanvas(10, 10);
+    const ctx = canvas.getContext("2d");
+    const input = parseInput({
+      version: "1.21.1",
+      slots: [{ slot: 36, name: "grass_block" }],
+    });
+    await renderInventory(ctx as unknown as Ctx2D, input, {
+      provider,
+      loader: nodeLoader(),
+      guiUrl,
+      options: { scale: 8, drawBackground: false, offscreen: nodeOffscreen() },
+    });
+    const layout = getWindowLayout("inventory");
+    const rect = layout.slots.find((s) => s.slot === 36)!;
+    const s = 8;
+    // Top-center sits on the (tinted) top diamond.
+    const d = ctx.getImageData(rect.x * s + 8 * s, rect.y * s + 4 * s, 3, 3).data;
+    const [r, g, b] = [d[0]!, d[1]!, d[2]!];
+    expect(g).toBeGreaterThan(r); // green dominant
+    expect(g).toBeGreaterThan(b);
+  });
+
+  it("respects a custom grass tint color", async () => {
+    const { provider, guiUrl } = setup("1.21.1");
+    const canvas = createCanvas(10, 10);
+    const ctx = canvas.getContext("2d");
+    const input = parseInput({
+      version: "1.21.1",
+      slots: [{ slot: 36, name: "grass_block" }],
+    });
+    await renderInventory(ctx as unknown as Ctx2D, input, {
+      provider,
+      loader: nodeLoader(),
+      guiUrl,
+      options: {
+        scale: 8,
+        drawBackground: false,
+        offscreen: nodeOffscreen(),
+        tint: { grass: "#ff0000" },
+      },
+    });
+    const layout = getWindowLayout("inventory");
+    const rect = layout.slots.find((s) => s.slot === 36)!;
+    const s = 8;
+    const d = ctx.getImageData(rect.x * s + 8 * s, rect.y * s + 4 * s, 3, 3).data;
+    const [r, g, b] = [d[0]!, d[1]!, d[2]!];
+    expect(r).toBeGreaterThan(g); // red dominant
+    expect(r).toBeGreaterThan(b);
+  });
+
   it("renders a flat item sprite (diamond_sword) non-empty", async () => {
     const { provider, guiUrl } = setup("1.21.1");
     const canvas = createCanvas(10, 10);

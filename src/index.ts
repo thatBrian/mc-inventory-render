@@ -21,10 +21,19 @@ export type { ParsedInput, NormalizedSlot } from "./parse.js";
 export {
   classify,
   resolveFaceTextures,
+  resolveFaceLayers,
+  tintClassFor,
+  DEFAULT_TINT,
   normalizeName,
   textureRefToFaceKey,
 } from "./assets.js";
-export type { AssetProvider, BlockModel } from "./assets.js";
+export type {
+  AssetProvider,
+  BlockModel,
+  TintClass,
+  FaceLayer,
+  BlockFaceLayers,
+} from "./assets.js";
 export {
   projectCube,
   affineForParallelogram,

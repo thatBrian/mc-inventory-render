@@ -28,6 +28,9 @@ per-face directional shading. This library reproduces that:
 - The correct per-face textures are resolved from the block model's `textures`
   map: `all` (uniform blocks like stone), `end`+`side` (logs/pillars),
   `top`+`side` (grass), or explicit `up`/`down`/`north`/`south`/`east`/`west`.
+- **Biome tinting** is applied to grayscale textures (grass, leaves, vines, …),
+  including compositing the grass-block side overlay — see
+  [Biome tinting](#biome-tinting).
 
 Items (anything without a usable block model) use their flat `item/generated`
 sprite.
@@ -144,9 +147,28 @@ interface RenderToCanvasOptions {
   assetsBaseUrl?: string;    // CDN/mirror base for the minecraft-assets data tree
   provider?: AssetProvider;  // advanced: supply your own
   loader?: ImageLoader;      // advanced: supply your own
-  offscreen?: OffscreenFactory; // for face shading (auto in browser)
+  offscreen?: OffscreenFactory; // for face shading + tinting (auto in browser)
+  tint?: Partial<Record<TintClass, string>>; // biome tint colors (see below)
 }
 ```
+
+### Biome tinting
+
+Minecraft ships some textures **grayscale** and colors them at render time from
+a biome colormap (`tintindex`): grass, the grass-block side overlay, most
+leaves, vines, lily pads. Inventory icons have no biome, so this library
+multiplies those faces by a fixed default color per class — overridable via
+`tint`:
+
+```ts
+await renderToCanvas(input, canvas, {
+  tint: { grass: "#7cbd6b", foliage: "#59ae30" }, // defaults; pass any subset
+});
+```
+
+Tint classes: `grass`, `foliage`, `spruce`, `birch`, `lilypad` (spruce/birch
+leaves use constant, non-biome colors in vanilla). Tinting and the grass side
+overlay require an `offscreen` factory (automatic in the browser).
 
 ## Node usage
 
