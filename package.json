@@ -1,0 +1,75 @@
+{
+  "name": "mc-inventory-render",
+  "version": "0.1.0",
+  "description": "Render Minecraft inventories from JSON across versions, with authentic isometric block icons and flat item sprites.",
+  "type": "module",
+  "license": "MIT",
+  "author": "",
+  "keywords": [
+    "minecraft",
+    "inventory",
+    "render",
+    "canvas",
+    "isometric",
+    "block",
+    "icon",
+    "minecraft-assets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thatBrian/mc-inventory-render.git"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "demo:dev": "vite --config demo/vite.config.ts",
+    "demo:build": "vite build --config demo/vite.config.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "minecraft-assets": "^1.17.0"
+  },
+  "peerDependencies": {
+    "react": ">=17"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "canvas": "^3.1.0",
+    "react": "^18.3.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  }
+}

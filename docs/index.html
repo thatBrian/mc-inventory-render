@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mc-inventory-render — live demo</title>
+    <script type="module" crossorigin src="./assets/index-CKwcoG6u.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Dyhfc4mU.css">
+  </head>
+  <body>
+    <header>
+      <h1>mc-inventory-render</h1>
+      <p class="tagline">
+        Render Minecraft inventories from JSON — authentic isometric block icons
+        + flat item sprites, across versions.
+      </p>
+    </header>
+
+    <main>
+      <section class="controls">
+        <div class="row">
+          <label>
+            Version
+            <select id="version"></select>
+          </label>
+          <label>
+            Window
+            <select id="window">
+              <option value="inventory">inventory</option>
+              <option value="chest">chest (9x3)</option>
+              <option value="generic_9x6">chest (9x6)</option>
+            </select>
+          </label>
+          <label>
+            Scale
+            <select id="scale">
+              <option value="3">3x</option>
+              <option value="4" selected>4x</option>
+              <option value="6">6x</option>
+            </select>
+          </label>
+        </div>
+        <div class="presets" id="presets"></div>
+        <label class="json-label">
+          Inventory JSON
+          <textarea id="json" spellcheck="false" rows="18"></textarea>
+        </label>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section class="preview">
+        <div class="canvas-wrap">
+          <canvas id="canvas"></canvas>
+        </div>
+        <p class="hint">
+          Block icons are composited live from per-face textures using the
+          <code>display.gui</code> transform [30, 225] @ 0.625 scale. Textures
+          load from the jsDelivr CDN.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <a href="https://github.com/" id="repo-link">GitHub repository</a>
+      · MIT License
+    </footer>
+
+  </body>
+</html>
