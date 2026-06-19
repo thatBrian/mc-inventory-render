@@ -7,7 +7,9 @@ renders to an HTML canvas; optional thin React wrapper.
 
 **[Live demo →](https://thatbrian.github.io/mc-inventory-render/)**
 
-![inventory render](https://raw.githubusercontent.com/thatBrian/mc-inventory-render/main/docs/example.png)
+![A rendered Minecraft inventory window: a row of isometric block icons (oak log, grass, stone, diamond block, crafting table, planks, bookshelf, TNT, furnace) with stack-count badges, plus flat tool/item sprites with a durability bar in the hotbar.](https://raw.githubusercontent.com/thatBrian/mc-inventory-render/main/docs/example.png)
+
+<sub>Rendered by this library from JSON (1.21.1). Regenerate with `npx tsx scripts/gen-example.mts`.</sub>
 
 ## Why isometric compositing?
 
@@ -170,6 +172,7 @@ npm run typecheck
 npm run build     # tsup -> dist (esm + cjs + d.ts)
 npm run demo:dev  # vite dev server for the demo
 npm run demo:build # build demo into docs/ for GitHub Pages
+npx tsx scripts/gen-example.mts # regenerate docs/example.png (README image)
 ```
 
 ## License
