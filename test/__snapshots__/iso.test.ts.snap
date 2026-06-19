@@ -28,28 +28,6 @@ exports[`projectCube > is a stable snapshot of cube geometry 1`] = `
     "face": "left",
     "quad": [
       {
-        "x": 0,
-        "y": -0.4916,
-      },
-      {
-        "x": -0.4419,
-        "y": -0.2706,
-      },
-      {
-        "x": -0.4419,
-        "y": 0.2706,
-      },
-      {
-        "x": 0,
-        "y": 0.0497,
-      },
-    ],
-    "shade": 0.72,
-  },
-  {
-    "face": "right",
-    "quad": [
-      {
         "x": -0.4419,
         "y": -0.2706,
       },
@@ -64,6 +42,28 @@ exports[`projectCube > is a stable snapshot of cube geometry 1`] = `
       {
         "x": -0.4419,
         "y": 0.2706,
+      },
+    ],
+    "shade": 0.72,
+  },
+  {
+    "face": "right",
+    "quad": [
+      {
+        "x": -0,
+        "y": -0.0497,
+      },
+      {
+        "x": 0.4419,
+        "y": -0.2706,
+      },
+      {
+        "x": 0.4419,
+        "y": 0.2706,
+      },
+      {
+        "x": -0,
+        "y": 0.4916,
       },
     ],
     "shade": 0.88,
